@@ -23,7 +23,7 @@
 
 - name: Clone dotfiles
   ansible.builtin.git:
-    repo: "git@github.com:k8s-1/dotfiles.git"
+    repo: "https://github.com/k8s-1/dotfiles.git"
     dest: "{{ ansible_facts['env']['HOME'] }}/dotfiles"
-    clone: yes
+    clone: true
   when: not dotfiles_stat.stat.exists
