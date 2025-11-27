@@ -1,5 +1,5 @@
 ---
-git_user = "k8s-1"
-git_email = "176627561+k8s-1@users.noreply.github.com"
+git_user: "k8s-1"
+git_email: "176627561+k8s-1@users.noreply.github.com"
 
-sops_version = "v3.11.0"
+sops_version: "v3.11.0"
