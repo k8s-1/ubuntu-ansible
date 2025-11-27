@@ -1,0 +1,120 @@
+---
+# GOLANG - always fetch latest stable release
+- name: Check if Go is installed
+  ansible.builtin.command: go version
+  register: go_version_check
+  changed_when: false
+  failed_when: false
+  environment:
+    PATH: "/usr/local/go/bin:{{ ansible_facts['env']['PATH'] }}"
+
+- name: Extract current Go version
+  ansible.builtin.set_fact:
+    go_current_version: "{{ go_version_check.stdout | regex_search('go([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1') | first }}"
+  when: go_version_check.rc == 0
+
+- name: Get latest Go version from golang.org
+  ansible.builtin.uri:
+    url: https://go.dev/VERSION?m=text
+    return_content: true
+  register: go_latest_release
+
+- name: Set latest Go version
+  ansible.builtin.set_fact:
+    go_latest_version: "{{ go_latest_release.content | regex_search('go([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1') | first }}"
+
+- name: Determine if Go needs update
+  ansible.builtin.set_fact:
+    go_needs_update: "{{ go_version_check.rc != 0 or go_current_version is not defined or go_current_version != go_latest_version }}"
+
+- name: Download latest Go
+  ansible.builtin.get_url:
+    url: "https://go.dev/dl/go{{ go_latest_version }}.linux-amd64.tar.gz"
+    dest: "{{ ansible_facts['env']['HOME'] }}/Downloads/go{{ go_latest_version }}.linux-amd64.tar.gz"
+    mode: '0640'
+    timeout: 300
+  when: go_needs_update | bool
+
+- name: Install Go
+  become: yes
+  ansible.builtin.shell:
+    cmd: "rm -rf /usr/local/go && tar -C /usr/local -xzf {{ ansible_facts['env']['HOME'] }}/Downloads/go{{ go_latest_version }}.linux-amd64.tar.gz"
+  when: go_needs_update | bool
+
+
+
+# NODE JS
+
+# NVM and Node.js installation
+- name: Check if NVM is installed
+  ansible.builtin.stat:
+    path: "{{ ansible_facts['env']['HOME'] }}/.nvm/nvm.sh"
+  register: nvm_check
+
+- name: Install NVM
+  ansible.builtin.shell:
+    cmd: "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"
+    creates: "{{ ansible_facts['env']['HOME'] }}/.nvm/nvm.sh"
+  when: not nvm_check.stat.exists
+
+- name: Check if installed Node.js
+  ansible.builtin.shell:
+    cmd: "node -v"
+  register: node_version_check
+  changed_when: false
+  failed_when: false
+  args:
+    executable: /bin/bash
+
+- name: Install Node.js
+  ansible.builtin.shell:
+    cmd: ". {{ ansible_facts['env']['HOME'] }}/.nvm/nvm.sh && nvm install 22"
+  args:
+    executable: /bin/bash
+  when: node_version_check.rc != 0 or (node_version_check.stdout is defined and not node_version_check.stdout.startswith('v22'))
+
+
+
+# PYTHON
+
+# Install uv python package manager
+- name: Ensure uv is installed
+  ansible.builtin.shell: curl -LsSf https://astral.sh/uv/install.sh | sh
+  args:
+    creates: "{{ ansible_facts['env']['HOME'] }}/.local/bin/uv"
+
+
+# TERRAFORM
+- name: Install Hashicorp signing key
+  become: yes
+  ansible.builtin.shell: |
+    wget -O - https://apt.releases.hashicorp.com/gpg |
+    gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    chmod go+r /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+- name: Add Hashicorp repository
+  become: yes
+  ansible.builtin.shell: |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+  args:
+    creates: /etc/apt/sources.list.d/hashicorp.list
+  register: hashicorp_sources
+
+- name: Install Terraform
+  become: yes
+  ansible.builtin.apt:
+    name: terraform
+    state: present
+    update_cache: yes
+  when: hashicorp_sources.changed
+
+
+
+
+# RUST
+- name: Install Rust using rustup
+  shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  args:
+    creates: ~/.cargo/bin/rustc  # Prevents re-running if Rust is already installed

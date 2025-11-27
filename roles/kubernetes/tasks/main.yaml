@@ -1,0 +1,59 @@
+---
+# install helm.sh from https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+# installer runs during bash alias 'up'
+- name: Ensure ~/other directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/other"
+    state: directory
+    mode: '0755'
+
+- name: Download get helm script
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4"
+    dest: "{{ ansible_facts['env']['HOME'] }}/other/get_helm.sh"
+    mode: '0700'
+  register: helm_download
+
+
+# setup kubectl
+- name: Ensure apt keyrings directory exists
+  become: yes
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download and install Kubernetes GPG key
+  become: yes
+  ansible.builtin.shell:
+    cmd: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  register: k8s_gpg_key
+
+- name: Set permissions on Kubernetes GPG key
+  become: yes
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    mode: '0644'
+  when: k8s_gpg_key.changed
+
+- name: Add Kubernetes apt repository
+  become: yes
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /"
+    filename: kubernetes
+    state: present
+    update_cache: yes
+
+- name: Install kubectl
+  become: yes
+  ansible.builtin.apt:
+    pkg:
+      - kubectl
+
+
+- name: Ensure ~/.kube exists
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/.kube"
+    state: directory
+    mode: '0700'

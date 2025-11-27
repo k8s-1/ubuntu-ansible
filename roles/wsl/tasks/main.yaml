@@ -1,0 +1,36 @@
+
+---
+- name: Install base packages
+  become: yes
+  ansible.builtin.apt:
+    pkg:
+      - xdg-utils
+      - wslu
+    update_cache: yes
+
+- name: Configure WSL to enable systemd and mirrored networking
+  become: true
+  copy:
+    dest: /etc/wsl.conf
+    content: |
+      [boot]
+      command="service docker start"
+
+      networkingMode=mirrored
+    owner: root
+    group: root
+    mode: '0644'
+
+# run docker daemon directly to troubleshoot docker: sudo dockerd
+# fixes docker daemon needing legacy iptables
+- name: Set iptables to use iptables-legacy
+  ansible.builtin.command:
+    cmd: update-alternatives --set iptables /usr/sbin/iptables-legacy
+  become: true
+  when: docker_group.changed
+# fixes docker daemon needing legacy iptables
+- name: Set ip6tables to use ip6tables-legacy
+  ansible.builtin.command:
+    cmd: update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+  become: true
+  when: docker_group.changed

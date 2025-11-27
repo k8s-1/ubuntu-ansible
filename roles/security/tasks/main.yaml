@@ -1,0 +1,88 @@
+---
+- name: Create ~/.token directory
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/.token"
+    state: directory
+    mode: '0750'
+    
+- name: Copy token folder contents to ~/.token
+  ansible.builtin.copy:
+    src: "token/"
+    dest: "{{ ansible_facts['env']['HOME'] }}/.token/"
+    mode: '0600'
+
+- name: Ensure token.enc file exists
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/.token/token.enc"
+    state: touch
+    mode: '0644'
+    modification_time: preserve
+    access_time: preserve
+
+# # EXAMPLE corporate proxy
+# # Store extra root certificates e.g. corporate proxy in ../files/
+#
+# - name: Copy certificate
+#   become: yes
+#   ansible.builtin.copy:
+#     src: "corporate-root-ca.crt"
+#     dest: "/usr/local/share/ca-certificates/corporate-root-ca.crt"
+#     mode: '0640'
+#   register: zscaler_cert_copy
+#
+# - name: Update certificates
+#   become: yes
+#   ansible.builtin.command: update-ca-certificates
+#   when: corporate-root-ca.changed
+#   register: update_ca_certificates
+#   changed_when: update_ca_certificates.rc == 0
+
+# permission user
+- name: get the non root user
+  set_fact:
+    ansible_user: "{{ ansible_facts['user_id'] }}"
+  
+- name: Add user to sudo
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: sudo
+    append: true
+  become: true
+
+- name: Disable password for sudo
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    validate: "visudo -cf %s"
+    state: present
+    regexp: "^%sudo.*$"
+  become: true
+
+# install SOPS
+- name: Check if sops is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/sops
+  register: sops_binary
+
+- name: Download SOPS binary
+  become: yes
+  ansible.builtin.get_url:
+    url: "https://github.com/getsops/sops/releases/download/v3.11.0/sops-v3.11.0.linux.amd64"
+    checksum: "sha256:https://github.com/getsops/sops/releases/download/v3.11.0/sops-v3.11.0.checksums.txt"
+    dest: "/usr/local/bin/sops"
+    mode: '0644'  # Initial non-executable mode
+  when: not sops_binary.stat.exists
+
+- name: Ensure correct permissions on SOPS binary
+  become: yes
+  ansible.builtin.file:
+    path: /usr/local/bin/sops
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0750'  # Make executable
+
+- name: Ensure ~/.config/sops/age directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/.config/sops/age"
+    state: directory
+    mode: '0755'

@@ -1,0 +1,46 @@
+---
+# Install Neovim - always fetch latest stable release
+- name: Check if Neovim is installed
+  ansible.builtin.command: nvim --version
+  register: nvim_version_check
+  changed_when: false
+  failed_when: false
+
+- name: Extract current Neovim version
+  ansible.builtin.set_fact:
+    nvim_current_version: "{{ nvim_version_check.stdout_lines[0] | regex_search('v[0-9]+\\.[0-9]+\\.[0-9]+') }}"
+  when: nvim_version_check.rc == 0
+
+- name: Get latest Neovim release version from GitHub
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/neovim/neovim/releases/latest
+    return_content: true
+  register: nvim_latest_release
+
+- name: Set latest Neovim version
+  ansible.builtin.set_fact:
+    nvim_latest_version: "{{ nvim_latest_release.json.tag_name }}"
+
+- name: Determine if Neovim needs update
+  ansible.builtin.set_fact:
+    nvim_needs_update: "{{ nvim_version_check.rc != 0 or nvim_current_version is not defined or nvim_current_version != nvim_latest_version }}"
+
+- name: Download latest Neovim tarball
+  ansible.builtin.get_url:
+    url: "https://github.com/neovim/neovim/releases/download/{{ nvim_latest_version }}/nvim-linux-x86_64.tar.gz"
+    dest: "{{ ansible_facts['env']['HOME'] }}/Downloads/nvim-linux-x86_64.tar.gz"
+    mode: '0640'
+  when: nvim_needs_update | bool
+
+- name: Remove old Neovim installation
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/nvim-linux-x86_64"
+    state: absent
+  when: nvim_needs_update | bool
+
+- name: Extract Neovim
+  ansible.builtin.unarchive:
+    src: "{{ ansible_facts['env']['HOME'] }}/Downloads/nvim-linux-x86_64.tar.gz"
+    dest: "{{ ansible_facts['env']['HOME'] }}/"
+    remote_src: yes
+  when: nvim_needs_update | bool

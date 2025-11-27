@@ -1,0 +1,4 @@
+# TODO adjust public key here
+# secret key goes in ~/.config/sops/age/keys.txt
+creation_rules:
+  - age: age1g42eslq9syp63dhmhcwrxcrqz3xemplts54h2as5psnaxnfzrfqsytz63u

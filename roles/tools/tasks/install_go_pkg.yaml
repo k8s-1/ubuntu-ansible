@@ -1,0 +1,19 @@
+---
+# Install a Go package
+- name: Check if {{ package_name }} is installed
+  ansible.builtin.stat:
+    path: "{{ ansible_facts['env']['HOME'] }}/go/bin/{{ binary_name | default(package_name) }}"
+  register: package_check
+
+- name: Install {{ package_name }}
+  ansible.builtin.shell:
+    cmd: "go install {{ package_url }}@{{ package_version | default('latest') }}"
+  environment:
+    GOPATH: "{{ ansible_facts['env']['HOME'] }}/go"
+    PATH: "{{ ansible_facts['env']['PATH'] }}:/usr/local/go/bin:{{ ansible_facts['env']['HOME'] }}/go/bin"
+  when: not package_check.stat.exists
+
+- name: Sleep to respect GitHub rate limit
+  ansible.builtin.wait_for:
+    timeout: 5
+  when: not package_check.stat.exists

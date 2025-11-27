@@ -1,0 +1,36 @@
+---
+- name: "Configure Ubuntu WSL2 24.04"
+  hosts: localhost
+  connection: local
+  vars_files:
+    - vars.yaml
+
+  roles:
+    - role: base
+      tags: [base]
+    
+    - role: neovim
+      tags: [neovim]
+
+    - role: security
+      tags: [security]
+
+    - role: docker
+      tags: [docker]
+
+    - role: kubernetes
+      tags: [kubernetes]
+
+    - role: programming_languages
+      tags: [programming_languages]
+
+    - role: tools
+      tags: [tools]
+
+  tasks:
+    - name: "WSL2 configuration"
+      include_role:
+        name: wsl
+      when: ansible_facts['kernel'] is search('microsoft')
+      tags: [wsl]
+

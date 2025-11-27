@@ -1,0 +1,38 @@
+---
+- name: Install base packages
+  become: yes
+  ansible.builtin.apt:
+    pkg:
+      - vim
+      - git
+      - ca-certificates
+      - openssl
+      - apt-transport-https
+      - build-essential
+      - curl
+      - wget
+      - gnupg
+      - lsb-release
+      - git
+      - tmux
+      - gnupg
+      - age
+      - fzf
+      - ripgrep
+      - jq
+      - bind9-dnsutils
+      - tree
+      - nmap
+    update_cache: yes
+
+- name: Create ~/Downloads directory
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/Downloads"
+    state: directory
+    mode: '0750'
+
+- name: Install fd
+  become: yes
+  ansible.builtin.apt:
+    pkg:
+      - fd-find

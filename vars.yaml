@@ -1,0 +1,25 @@
+---
+# Git
+
+git_user = "k8s-1"
+git_email = "176627561+k8s-1@users.noreply.github.com"
+
+
+
+# Jira, run Jira init to fetch these values automatically
+
+# e.g. https://example.atlassian.net/
+# jira_url=
+
+# e.g. j.doe@org.com
+# jira_login=
+
+# e.g. ABC
+# jira_project=
+
+# e.g. ABC board
+# jira_board=
+
+
+# Versions
+sops_version = "://github.com/getsops/sops/releases/download/v3.11.0/sos-v3.11.0.linux.amd64"

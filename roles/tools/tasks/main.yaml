@@ -1,0 +1,29 @@
+---
+# Install Go packages
+- name: Install Go packages
+  include_tasks: install_go_pkg.yaml
+  vars:
+    package_name: "{{ item.name }}"
+    binary_name: "{{ item.binary | default(item.name) }}"
+    package_url: "{{ item.url }}"
+    package_version: "{{ item.version | default('latest') }}"
+  loop:
+    - { name: "jira", binary: "jira", url: "github.com/ankitpokhrel/jira-cli/cmd/jira" }
+    - { name: "dyff", url: "github.com/homeport/dyff/cmd/dyff" }
+    - { name: "cobra-cli", url: "github.com/spf13/cobra-cli" }
+    - { name: "kind", url: "sigs.k8s.io/kind" }
+    - { name: "yq", url: "github.com/mikefarah/yq/v4" }
+    - { name: "cue", url: "cuelang.org/go/cmd/cue" }
+    - { name: "addlicense", url: "github.com/google/addlicense" }
+
+- name: Check if dotfiles exists
+  ansible.builtin.stat:
+    path: "{{ ansible_facts['env']['HOME'] }}/dotfiles"
+  register: dotfiles_stat
+
+- name: Clone dotfiles
+  ansible.builtin.git:
+    repo: "git@github.com:k8s-1/dotfiles.git"
+    dest: "{{ ansible_facts['env']['HOME'] }}/dotfiles"
+    clone: yes
+  when: not dotfiles_stat.stat.exists
