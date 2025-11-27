@@ -1,5 +1,6 @@
 ---
 - name: Enable unattended security updates
+  when: not ansible_facts['kernel'] is search('microsoft')
   become: true
   ansible.builtin.apt:
     pkg:
