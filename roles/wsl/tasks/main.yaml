@@ -1,7 +1,7 @@
 
 ---
 - name: Install base packages
-  become: yes
+  become: true
   ansible.builtin.apt:
     pkg:
       - xdg-utils

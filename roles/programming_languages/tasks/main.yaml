@@ -31,12 +31,12 @@
   ansible.builtin.get_url:
     url: "https://go.dev/dl/go{{ go_latest_version }}.linux-amd64.tar.gz"
     dest: "{{ ansible_facts['env']['HOME'] }}/Downloads/go{{ go_latest_version }}.linux-amd64.tar.gz"
-    mode: '0640'
+    mode: '0600'
     timeout: 300
   when: go_needs_update | bool
 
 - name: Install Go
-  become: yes
+  become: true
   ansible.builtin.shell:
     cmd: "rm -rf /usr/local/go && tar -C /usr/local -xzf {{ ansible_facts['env']['HOME'] }}/Downloads/go{{ go_latest_version }}.linux-amd64.tar.gz"
   when: go_needs_update | bool
@@ -86,7 +86,7 @@
 
 # TERRAFORM
 - name: Install Hashicorp signing key
-  become: yes
+  become: true
   ansible.builtin.shell: |
     wget -O - https://apt.releases.hashicorp.com/gpg |
     gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
@@ -95,7 +95,7 @@
     creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
 
 - name: Add Hashicorp repository
-  become: yes
+  become: true
   ansible.builtin.shell: |
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
   args:
@@ -103,7 +103,7 @@
   register: hashicorp_sources
 
 - name: Install Terraform
-  become: yes
+  become: true
   ansible.builtin.apt:
     name: terraform
     state: present

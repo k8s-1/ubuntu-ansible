@@ -1,9 +1,56 @@
 ---
+# Firewall
+- name: Configure firewall if not WSL2
+  when: not ansible_facts['kernel'] is search('microsoft')
+  block:
+  - name: Install firewall
+    become: true
+    ansible.builtin.apt:
+      pkg:
+        - ufw
+
+  - name: Enable UFW
+    ufw:
+      state: enabled
+    become: true
+
+  - name: Install community.general collection
+    ansible.builtin.command:
+      cmd: ansible-galaxy collection install community.general
+    register: command_output
+    changed_when: "'installed successfully' in command_output.stdout"
+
+  - name: Enable UFW systemd service
+    ansible.builtin.systemd:
+      name: ufw
+      enabled: true
+      state: started
+    become: true
+
+  - name: Deny all incoming traffic
+    ufw:
+      rule: deny
+      direction: incoming
+    become: true
+
+  - name: Allow all outgoing traffic
+    ufw:
+      rule: allow
+      direction: outgoing
+    become: true
+
+  - name: Deny routed traffic
+    ufw:
+      rule: deny
+      direction: routed
+    become: true
+
+
 - name: Create ~/.token directory
   ansible.builtin.file:
     path: "{{ ansible_facts['env']['HOME'] }}/.token"
     state: directory
-    mode: '0750'
+    mode: '0700'
     
 - name: Copy token folder contents to ~/.token
   ansible.builtin.copy:
@@ -15,7 +62,7 @@
   ansible.builtin.file:
     path: "{{ ansible_facts['env']['HOME'] }}/.token/token.enc"
     state: touch
-    mode: '0644'
+    mode: '0600'
     modification_time: preserve
     access_time: preserve
 
@@ -23,7 +70,7 @@
 # # Store extra root certificates e.g. corporate proxy in ../files/
 #
 # - name: Copy certificate
-#   become: yes
+#   become: true
 #   ansible.builtin.copy:
 #     src: "corporate-root-ca.crt"
 #     dest: "/usr/local/share/ca-certificates/corporate-root-ca.crt"
@@ -31,7 +78,7 @@
 #   register: zscaler_cert_copy
 #
 # - name: Update certificates
-#   become: yes
+#   become: true
 #   ansible.builtin.command: update-ca-certificates
 #   when: corporate-root-ca.changed
 #   register: update_ca_certificates
@@ -65,24 +112,24 @@
   register: sops_binary
 
 - name: Download SOPS binary
-  become: yes
+  become: true
   ansible.builtin.get_url:
     url: "https://github.com/getsops/sops/releases/download/v3.11.0/sops-v3.11.0.linux.amd64"
     checksum: "sha256:https://github.com/getsops/sops/releases/download/v3.11.0/sops-v3.11.0.checksums.txt"
     dest: "/usr/local/bin/sops"
-    mode: '0644'  # Initial non-executable mode
+    mode: '0600'  # Initial non-executable mode
   when: not sops_binary.stat.exists
 
 - name: Ensure correct permissions on SOPS binary
-  become: yes
+  become: true
   ansible.builtin.file:
     path: /usr/local/bin/sops
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
-    mode: '0750'  # Make executable
+    mode: '0500'
 
 - name: Ensure ~/.config/sops/age directory exists
   ansible.builtin.file:
     path: "{{ ansible_facts['env']['HOME'] }}/.config/sops/age"
     state: directory
-    mode: '0755'
+    mode: '0700'

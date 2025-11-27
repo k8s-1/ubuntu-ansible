@@ -17,28 +17,28 @@
 
 # setup kubectl
 - name: Ensure apt keyrings directory exists
-  become: yes
+  become: true
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
 
 - name: Download and install Kubernetes GPG key
-  become: yes
+  become: true
   ansible.builtin.shell:
     cmd: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
     creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
   register: k8s_gpg_key
 
 - name: Set permissions on Kubernetes GPG key
-  become: yes
+  become: true
   ansible.builtin.file:
     path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
     mode: '0644'
   when: k8s_gpg_key.changed
 
 - name: Add Kubernetes apt repository
-  become: yes
+  become: true
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /"
     filename: kubernetes
@@ -46,7 +46,7 @@
     update_cache: yes
 
 - name: Install kubectl
-  become: yes
+  become: true
   ansible.builtin.apt:
     pkg:
       - kubectl

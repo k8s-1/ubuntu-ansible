@@ -29,7 +29,7 @@
   ansible.builtin.get_url:
     url: "https://github.com/neovim/neovim/releases/download/{{ nvim_latest_version }}/nvim-linux-x86_64.tar.gz"
     dest: "{{ ansible_facts['env']['HOME'] }}/Downloads/nvim-linux-x86_64.tar.gz"
-    mode: '0640'
+    mode: '0600'
   when: nvim_needs_update | bool
 
 - name: Remove old Neovim installation

@@ -1,6 +1,6 @@
 ---
 - name: Install base packages
-  become: yes
+  become: true
   ansible.builtin.apt:
     pkg:
       - vim
@@ -32,7 +32,7 @@
     mode: '0750'
 
 - name: Install fd
-  become: yes
+  become: true
   ansible.builtin.apt:
     pkg:
       - fd-find
