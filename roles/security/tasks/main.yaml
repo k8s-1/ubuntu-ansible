@@ -1,4 +1,10 @@
 ---
+- name: Enable unattended security updates
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - unattended-upgrades
+
 # Firewall
 - name: Configure firewall if not WSL2
   when: not ansible_facts['kernel'] is search('microsoft')
