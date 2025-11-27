@@ -4,10 +4,7 @@ set -e
 docker build -f Dockerfile -t ansible-test .
 
 echo "Testing Ansible playbook (tags: $TAGS)..."
-docker run --rm -it \
-    -v "$(pwd):/ansible" \
-    -w /ansible \
-    ansible-test \
+docker run --rm -it ansible-test \
     bash -c "
         cd /ansible && \
         ansible-playbook main.yaml \

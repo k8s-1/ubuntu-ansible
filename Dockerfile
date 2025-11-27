@@ -19,14 +19,8 @@ RUN pip3 install --break-system-packages ansible
 RUN useradd -m -s /bin/bash testuser && \
     echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Set up working directory
-WORKDIR /ansible
-
 # Copy playbook files
 COPY . /ansible/
-
-# Switch to test user
-USER testuser
-WORKDIR /home/testuser
+WORKDIR /ansible
 
 CMD ["/bin/bash"]
