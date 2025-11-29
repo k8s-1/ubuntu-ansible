@@ -15,6 +15,7 @@
     - { name: "yq", url: "github.com/mikefarah/yq/v4" }
     - { name: "cue", url: "cuelang.org/go/cmd/cue" }
     - { name: "addlicense", url: "github.com/google/addlicense" }
+    - { name: "fzf", url: "github.com/junegunn/fzf@latest" }
 
 - name: Check if dotfiles exists
   ansible.builtin.stat:

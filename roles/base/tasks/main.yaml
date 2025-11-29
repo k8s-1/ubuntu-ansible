@@ -17,7 +17,7 @@
       - tmux
       - gnupg
       - age
-      - fzf
+      # - fzf installed with go
       - ripgrep
       - jq
       - bind9-dnsutils
